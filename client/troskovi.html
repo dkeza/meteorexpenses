@@ -1,0 +1,316 @@
+<head>
+  <title>Praćenje troškova i prihoda</title>
+</head>
+
+<template name="ApplicationLayout">
+
+  <nav class = "navbar navbar-default" role = "navigation">
+    <div class = "navbar-header">
+      <button type = "button" class = "navbar-toggle" data-toggle = "collapse" data-target = "#example-navbar-collapse">
+        <span class = "sr-only">Toggle navigation</span>
+        <span class = "icon-bar"></span>
+        <span class = "icon-bar"></span>
+        <span class = "icon-bar"></span>
+      </button>
+      <a class = "navbar-brand" href = "/">{{language "home"}}</a>
+    </div>
+    <div class = "collapse navbar-collapse" id = "example-navbar-collapse">
+      <ul class = "nav navbar-nav">
+        {{#if currentUser}}
+        <li class="{{ activeIfTemplateIs 'Troskovi' }}"><a href = "/troskovi">{{language "expenses"}}</a></li>
+        <li class="{{ activeIfTemplateIs 'Prihodi' }}"><a href = "/prihodi">{{language "incomes"}}</a></li>
+        <li class = "dropdown">
+          <a href = "#" class = "dropdown-toggle" data-toggle = "dropdown">
+            {{language "manager_data"}}
+            <b class = "caret"></b>
+          </a>
+          <ul class = "dropdown-menu">
+            <li><a href = "/kupci">{{language "accounts"}}</a></li>
+            <li><a href = "/prodavci">{{language "sellers"}}</a></li>
+          </ul>
+        </li>
+        {{/if}}
+        <li class = "dropdown">
+          <a href = "#" class = "dropdown-toggle" data-toggle = "dropdown">
+            {{getSelectedLanguage}}
+            <b class = "caret"></b>
+          </a>
+          <ul class = "dropdown-menu">
+            <li><a class="js-language-sr" href = "">Srpski</a></li>
+            <li><a class="js-language-en" href = "">English</a></li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+       {{> loginButtons}} <!-- here -->
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="panel panel-default">
+      {{#if currentUser}}
+      <div class="panel-heading">{{getKupacIme}} {{language "balance"}}: {{getSaldo}} RSD ({{getSaldoEur}} €)</div>
+      <div class="panel-body">
+        <form class="form-horizontal">
+          <div class="form-group">
+            <label for="Kupac" class="col-sm-3 control-label">{{language "account"}}</label>
+            <div class="col-sm-5">
+              <select class="form-control js-kupac-picker" id="kupacid">
+                {{#each kupci}}
+                  <option value="{{_id}}" {{isSelectedKupac}}>{{getIme}}</option>
+                {{/each}}
+              </select>
+            </div>
+            <button type="button" class="col-sm-3 btn btn-info js-troskovi-kurs">{{language "exchange_rate"}} €: {{getKurs}}</button>
+           <!--  <button class="btn btn-default col-sm-1 js-troskovi-kurs-refresh" type="button">R</button> -->
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label">{{language "total_unpaid"}}</label>
+            <div class="col-sm-9">
+              <p class="form-control-static">{{getDug}} RSD ({{getDugEuro}} €)</p>
+            </div>
+          </div>
+        </form>
+      </div>
+      {{/if}}
+    </div>
+    {{> meteoris_flash}}
+    {{> yield}}
+  </div>
+</template>
+
+<template name="home">
+  <h1>{{language "simple_cost_accounting"}}</h1>
+  {{#if currentUser}}
+    <h3>{{language "welcome"}} {{getUserName}}</h3>
+    <button class="btn btn-lg btn-primary js-log-out">{{language "log_me_out"}}</button>
+  {{else}}
+    <div class="container">
+      <form class="form-signin js-signin-form">
+        <h2 class="form-signin-heading">{{language "log_into_app"}}</h2>
+        <label for="inputUsername" class="sr-only">E-Mail</label>
+        <input type="text" id="inputUsername" class="form-control" placeholder="{{language "user"}}" required autofocus>
+        <label for="inputPassword" class="sr-only">{{language "password"}}</label>
+        <input type="password" id="inputPassword" class="form-control" placeholder="{{language "password"}}" required>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">{{language "log_in"}}</button>
+      </form>
+    </div>
+  {{/if}}
+</template>
+
+<template name="kupci">
+  <h3>{{language "accounts"}}</h3>
+  <a class="btn btn-primary" href="/kupac-unos" role="button">{{language "new_account"}}</a>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <td>{{language "company"}}</td><td>{{language "first_name"}}</td><td>{{language "last_name"}}</td>
+        </tr>
+      </thead>
+      <tbody>
+      {{#each kupci}}
+        <tr>
+          <td>{{firma}}</td><td>{{ime}}</td><td>{{prezime}}</td><td><a class="btn btn-success js-kupac-izmeni" href="{{pathFor route='kupac.izmeni'}}" role="button">{{language "update"}}</a></td><td><a class="btn btn-danger js-kupac-obrisi" href="#" role="button">{{language "delete"}}</a></td>
+        </tr>
+      {{/each}}
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template name="kupacUnos">
+  <form class="form-inline js-kupac-unos">
+    <div class="form-group">
+      <label class="sr-only" for="firma">{{language "company"}}</label>
+      <input type="text" class="form-control" id="firma" placeholder="{{language "enter"}} {{language "company"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "first_name"}}</label>
+      <input type="text" class="form-control" id="ime" placeholder="{{language "enter"}} {{language "first_name"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "last_name"}}</label>
+      <input type="text" class="form-control" id="prezime" placeholder="{{language "enter"}} {{language "last_name"}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+    <a class="btn btn-danger" href="{{pathFor route='kupci'}}" role="button">{{language "cancel"}}</a>
+  </form>
+</template>
+
+<template name="kupacIzmeni">
+  <form class="form-inline js-kupac-izmena">
+    <div class="form-group">
+      <label class="sr-only" for="firma">{{language "company"}}</label>
+      <input type="text" class="form-control" id="firma" placeholder="{{language "enter"}} {{language "company"}}" value="{{firma}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "first_name"}}</label>
+      <input type="text" class="form-control" id="ime" placeholder="{{language "enter"}} {{language "first_name"}}" value="{{ime}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "last_name"}}</label>
+      <input type="text" class="form-control" id="prezime" placeholder="{{language "enter"}} {{language "last_name"}}" value="{{prezime}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+    <a class="btn btn-danger" href="{{pathFor route='kupci'}}" role="button">{{language "cancel"}}</a>
+  </form>
+</template>
+
+<template name="prodavci">
+  <h3>{{language "sellers"}}</h3>
+  <a class="btn btn-primary" href="/prodavac-unos" role="button">{{language "new_seller"}}</a>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <td>{{language "company"}}</td><td>{{language "first_name"}}</td><td>{{language "last_name"}}</td>
+        </tr>
+      </thead>
+      <tbody>
+      {{#each prodavci}}
+        <tr>
+          <td>{{firma}}</td><td>{{ime}}</td><td>{{prezime}}</td><td><a class="btn btn-success js-prodavac-izmeni" href="{{pathFor route='prodavac.izmeni'}}" role="button">{{language "update"}}</a></td><td><a class="btn btn-danger js-prodavac-obrisi" href="#" role="button">{{language "delete"}}</a></td>
+        </tr>
+      {{/each}}
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template name="prodavacUnos">
+  <form class="form-inline js-prodavac-unos">
+    <div class="form-group">
+      <label class="sr-only" for="firma">{{language "company"}}</label>
+      <input type="text" class="form-control" id="firma" placeholder="{{language "enter"}} {{language "company"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "first_name"}}</label>
+      <input type="text" class="form-control" id="ime" placeholder="{{language "enter"}} {{language "first_name"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "last_name"}}</label>
+      <input type="text" class="form-control" id="prezime" placeholder="{{language "enter"}} {{language "last_name"}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+    <a class="btn btn-danger" href="{{pathFor route='prodavci'}}" role="button">{{language "cancel"}}</a>
+  </form>
+</template>
+
+<template name="prodavacIzmeni">
+  <form class="form-inline js-prodavac-izmena">
+    <div class="form-group">
+      <label class="sr-only" for="firma">{{language "company"}}</label>
+      <input type="text" class="form-control" id="firma" placeholder="{{language "enter"}} {{language "company"}}" value="{{firma}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "first_name"}}</label>
+      <input type="text" class="form-control" id="ime" placeholder="{{language "enter"}} {{language "first_name"}}" value="{{ime}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="ime">{{language "last_name"}}</label>
+      <input type="text" class="form-control" id="prezime" placeholder="{{language "enter"}} {{language "last_name"}}" value="{{prezime}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+    <a class="btn btn-danger" href="{{pathFor route='prodavci'}}" role="button">{{language "cancel"}}</a>
+  </form>
+</template>
+
+<template name="troskovi">
+  <h3>{{language "expenses"}} ({{getTroskoviSum}} €)</h3>
+  <form class="form-inline js-trosak-unos">
+    <div class="form-group">
+      <label class="sr-only" for="prodavacid">{{language "seller"}}</label>
+        <select class="form-control" id="prodavacid">
+          {{#each prodavci}}
+            <option value="{{_id}}">{{firma}} {{ime}} {{prezime}}</option>
+          {{/each}}
+        </select>
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="opis">{{language "description"}}</label>
+      <input type="text" class="form-control" id="opis" placeholder="{{language "enter"}} {{language "description"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="iznos">{{language "amount"}}</label>
+      <input type="text" class="form-control" id="iznos" placeholder="{{language "enter"}} {{language "amount"}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <td>{{language "company"}}</td><td>{{language "date"}}</td><td>{{language "description"}}</td><td>{{language "amount"}} RSD</td><td>{{language "amount"}} €</td><td>{{language "paid"}}</td>
+        </tr>
+      </thead>
+      <tbody>
+      {{#each troskovi}}
+        <tr>
+          <td>{{prodavacfirma}}</td><td>{{getVreme}}</td><td>{{opis}}</td><td>{{getIznos}}</td><td>{{getIznosEur}}</td><td><input class="js-trosak-placen" type="checkbox" {{getPlaceno}} ></td><td><a class="btn btn-success js-trosak-izmeni" href="{{pathFor route='trosak.izmeni'}}" role="button">{{language "update"}}</a></td><td><a class="btn btn-danger js-trosak-obrisi" href="#" role="button">{{language "delete"}}</a></td>
+        </tr>
+      {{/each}}
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template name="trosakIzmeni">
+  <form class="form-inline js-trosak-izmeni">
+    <div class="form-group">
+      <label class="sr-only" for="prodavacid">{{language "seller"}}</label>
+        <select class="form-control" id="prodavacid">
+          {{#each prodavci}}
+            <option value="{{_id}}" {{isSelected}}>{{firma}}</option>
+          {{/each}}
+        </select>
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="opis">{{language "description"}}</label>
+      <input type="text" class="form-control" id="opis" placeholder="{{language "enter"}} {{language "description"}}" value="{{opis}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="iznos">{{language "amount"}}</label>
+      <input type="text" class="form-control" id="iznos" placeholder="{{language "enter"}} {{language "amount"}}" value="{{iznos}}">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+    <a class="btn btn-danger" href="{{pathFor route='troskovi'}}" role="button">{{language "cancel"}}</a>
+  </form>
+</template>
+
+<template name="prihodi">
+  <h3>{{language "incomes"}}  ({{getPrihodiSum}} €)</h3>
+  <form class="form-inline js-prihod-unos">
+    <div class="form-group">
+      <label class="sr-only" for="opis">{{language "description"}}</label>
+      <input type="text" class="form-control" id="opis" placeholder="{{language "enter"}} {{language "description"}}">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="iznos">{{language "amount"}} RSD</label>
+      <input type="text" class="form-control" id="iznos" placeholder="{{language "enter"}} {{language "amount"}} RSD">
+    </div>
+    <div class="form-group">
+      <label class="sr-only" for="iznoseur">{{language "amount"}} €</label>
+      <input type="text" class="form-control" id="iznoseur" placeholder="{{language "enter"}} {{language "amount"}} €">
+    </div>
+    <button type="submit" class="btn btn-success">{{language "save"}}</button>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <caption>Prihodi</caption>
+      <thead>
+        <tr>
+          <td>{{language "description"}}</td><td>{{language "date"}}</td><td>{{language "amount"}} RSD</td><td>{{language "amount"}} €</td>
+        </tr>
+      </thead>
+      <tbody>
+      {{#each prihodi}}
+        <tr>
+          <td>{{opis}}</td><td>{{getVreme}}</td><td>{{getIznos}}</td><td>{{getIznosEur}}</td><td><a class="btn btn-danger js-prihod-obrisi" href="#" role="button">{{language "delete"}}</a></td>
+        </tr>
+      {{/each}}
+      </tbody>
+    </table>
+  </div>
+</template>
