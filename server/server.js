@@ -172,7 +172,7 @@ SyncedCron.add({
   name: 'Get EUR exchenge rate',
   schedule: function(parser) {
     // parser is a later.parse object
-    // return parser.text('every 5 seconds');
+    //return parser.text('every 5 seconds');
 
     return parser.text('at 11:00 pm');
     // midnight is at 5pm LA time ... 10 am LA time is 3 am UTC
@@ -187,7 +187,7 @@ SyncedCron.add({
 
     //var todaysUsers = Meteor.users.find({   createdAt: {    $lt: (yesterday), $gt: dayBeforeYesterday   } }).fetch()
     //rest of function here
-      var rates = new OpenExchangeRates('');
+      var rates = new OpenExchangeRates(process.env.OERKEY);
       rates.latest(function(err, result){
         var neuro = 0.00;
         neuro = result.rates.RSD/result.rates.EUR;

@@ -3,7 +3,8 @@ Multilingual incomes and expenses web app written in [Meteor](https://www.meteor
 
 Works with Meteor 1.2.1
 
+Set [Open Exchange Rate](https://openexchangerates.org/) key in OERKEY enviroment variable
+
 #### To do
 
-* Secrets should be moved to env file
 * Should be ported to Meteor 1.6.1
